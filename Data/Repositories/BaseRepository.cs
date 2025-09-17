@@ -92,6 +92,17 @@ public abstract class BaseRepository<TEntity>(DataContext context) : IBaseReposi
         }
     }
 
+    public virtual async Task<RepositoryResult<IEnumerable<TEntity>>> GetByQueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>>? queryBuilder = null)
+    {
+        IQueryable<TEntity> query = _dbSet;
+
+        if (queryBuilder != null)
+            query = queryBuilder(query);
+
+        var entities = await query.ToListAsync();
+        return RepositoryResult<IEnumerable<TEntity>>.Ok(entities);
+    }
+
     public virtual async Task<RepositoryResult<TEntity>> GetOneAsync(Expression<Func<TEntity, bool>> where, params Expression<Func<TEntity, object>>[] includes)
     {
         try

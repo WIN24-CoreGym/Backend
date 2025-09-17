@@ -1,13 +1,24 @@
+using Business.Interfaces;
+using Business.Services;
 using Data.Contexts;
+using Data.Interfaces;
+using Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
 
 // Set the DataDirectory to root of solution. Used for setting db path relative to solution directory.
 AppDomain.CurrentDomain.SetData("DataDirectory", Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..")));
 
 builder.Services.AddDbContext<DataContext>(x => x.UseSqlServer(builder.Configuration.GetConnectionString("LocalDB")));
 
+builder.Services.AddScoped<IWorkoutRepository, WorkoutRepository>();
+builder.Services.AddScoped<IWorkoutCustomerRepository, WorkoutCustomerRepository>();
+builder.Services.AddScoped<IWorkoutLocationRepository, WorkoutLocationRepository>();
+builder.Services.AddScoped<IWorkoutInstructorRepository, WorkoutInstructorRepository>();
+builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
+builder.Services.AddScoped<IWorkoutService, WorkoutService>();
 
 
 builder.Services.AddControllers();
