@@ -1,6 +1,5 @@
 ﻿using Business.Dtos;
 using Business.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers
@@ -28,9 +27,47 @@ namespace WebApi.Controllers
                 return Ok(new { Message = "User registered successfully" });
             }
 
-            // Returnera   felmeddelanden
             var errors = result.Errors.Select(e => e.Description).ToList();
             return BadRequest(new { Errors = errors });
+        }
+
+        [HttpPut("update/{userId}")]
+        public async Task<IActionResult> UpdateUser(string userId, [FromBody] UpdateUserDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (string.IsNullOrEmpty(userId))
+                return BadRequest(new { Message = "User ID is required" });
+
+            var result = await _authService.UpdateUserAsync(userId, dto);
+            if (result.Succeeded)
+            {
+                return Ok(new { Message = "User updated successfully" });
+            }
+
+            var errors = result.Errors.Select(e => e.Description).ToList();
+            return BadRequest(new { Errors = errors });
+        }
+
+        [HttpGet("profile/{userId}")]
+        public async Task<IActionResult> GetUserProfile(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+                return BadRequest(new { Message = "User ID is required" });
+
+            var user = await _authService.GetUserByIdAsync(userId);
+            if (user == null)
+                return NotFound(new { Message = "User not found" });
+
+            return Ok(new
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                DateJoined = user.DateJoined
+            });
         }
     }
 }
