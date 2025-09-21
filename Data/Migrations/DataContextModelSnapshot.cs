@@ -116,7 +116,12 @@ namespace Data.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime>("BookingDate")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("WorkoutId", "UserId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("WorkoutCustomer");
                 });
@@ -325,11 +330,19 @@ namespace Data.Migrations
 
             modelBuilder.Entity("Data.Entities.WorkoutCustomerEntity", b =>
                 {
+                    b.HasOne("Data.Entities.AppUser", "Customer")
+                        .WithMany("WorkoutIds")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Data.Entities.WorkoutEntity", "Workout")
                         .WithMany("Customers")
                         .HasForeignKey("WorkoutId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Customer");
 
                     b.Navigation("Workout");
                 });
@@ -413,6 +426,11 @@ namespace Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Data.Entities.AppUser", b =>
+                {
+                    b.Navigation("WorkoutIds");
                 });
 
             modelBuilder.Entity("Data.Entities.InstructorEntity", b =>

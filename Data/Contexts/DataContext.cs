@@ -44,6 +44,12 @@ public class DataContext(DbContextOptions<DataContext> options) : IdentityDbCont
         modelBuilder.Entity<WorkoutCustomerEntity>()
             .HasKey(wc => new { wc.WorkoutId, wc.UserId });
 
+        modelBuilder.Entity<WorkoutCustomerEntity>()
+            .HasOne(wc => wc.Customer)
+            .WithMany(c => c.WorkoutIds)
+            .HasForeignKey(wc => wc.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         base.OnModelCreating(modelBuilder);
     }
 }

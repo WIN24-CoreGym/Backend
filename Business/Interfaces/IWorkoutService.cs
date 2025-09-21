@@ -6,4 +6,5 @@ public interface IWorkoutService
 {
     Task<WorkoutResult<IEnumerable<WorkoutModel>>> GetAllWorkoutsAsync();
     Task<WorkoutResult<IEnumerable<WorkoutModel>>> GetAvailableWorkoutsAsync();
+    Task<WorkoutResult<IEnumerable<WorkoutModel>>> GetWorkoutsByCustomerIdAsync(string userId);
 }
