@@ -11,4 +11,45 @@ public class DataContext(DbContextOptions<DataContext> options) : IdentityDbCont
     public DbSet<WorkoutInstructorEntity> WorkoutInstructor { get; set; }
     public DbSet<WorkoutLocationEntity> WorkoutLocation { get; set; }
     public DbSet<InstructorEntity> Instructor { get; set; }
+
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Workout
+        modelBuilder.Entity<WorkoutEntity>()
+            .HasMany(w => w.Customers)
+            .WithOne(wc => wc.Workout);
+
+        modelBuilder.Entity<WorkoutEntity>()
+            .HasOne(w => w.Location)
+            .WithMany(l => l.Workouts);
+
+        modelBuilder.Entity<WorkoutEntity>()
+            .HasMany(w => w.Instructors)
+            .WithOne(i => i.Workout);
+
+
+        // Instructor
+        modelBuilder.Entity<InstructorEntity>()
+            .HasMany(i => i.WorkoutInstructors)
+            .WithOne(wi => wi.Instructor);
+
+
+        // WorkoutInstructor
+        modelBuilder.Entity<WorkoutInstructorEntity>()
+            .HasKey(wi => new { wi.WorkoutId, wi.InstructorId });
+
+
+        // WorkoutCustomer
+        modelBuilder.Entity<WorkoutCustomerEntity>()
+            .HasKey(wc => new { wc.WorkoutId, wc.UserId });
+
+        modelBuilder.Entity<WorkoutCustomerEntity>()
+            .HasOne(wc => wc.Customer)
+            .WithMany(c => c.WorkoutIds)
+            .HasForeignKey(wc => wc.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        base.OnModelCreating(modelBuilder);
+    }
 }
