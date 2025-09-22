@@ -28,7 +28,7 @@ namespace WebApi.Controllers
                 return Ok(new { Message = "User registered successfully" });
             }
 
-            // Returnera   felmeddelanden
+            // Returnera felmeddelanden
             var errors = result.Errors.Select(e => e.Description).ToList();
             return BadRequest(new { Errors = errors });
         }
