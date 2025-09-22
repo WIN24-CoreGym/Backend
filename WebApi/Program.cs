@@ -1,34 +1,24 @@
-using Business.Interfaces;
 using Business.Services;
 using Data.Contexts;
-using Data.Interfaces;
-using Data.Repositories;
 using Data.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 builder.Services.AddDbContext<DataContext>(x => x.UseSqlServer(builder.Configuration.GetConnectionString("LocalDB")));
 
-builder.Services.AddScoped<IWorkoutRepository, WorkoutRepository>();
-builder.Services.AddScoped<IWorkoutCustomerRepository, WorkoutCustomerRepository>();
-builder.Services.AddScoped<IWorkoutLocationRepository, WorkoutLocationRepository>();
-builder.Services.AddScoped<IWorkoutInstructorRepository, WorkoutInstructorRepository>();
-builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
-builder.Services.AddScoped<IWorkoutService, WorkoutService>();
+builder.Services.AddScoped<AuthService>();
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
-    options.Password.RequireDigit = false;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
+    options.User.RequireUniqueEmail = true;
     options.Password.RequiredLength = 6;
+    options.Password.RequireDigit = true;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
 })
-    
 .AddEntityFrameworkStores<DataContext>()
 .AddDefaultTokenProviders();
 
@@ -57,7 +47,6 @@ if (app.Environment.IsDevelopment())
 
 app.MapOpenApi();
 app.UseHttpsRedirection();
-app.UseCors("frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
