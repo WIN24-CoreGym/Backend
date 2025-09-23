@@ -19,20 +19,20 @@ builder.Services.AddScoped<IWorkoutLocationRepository, WorkoutLocationRepository
 builder.Services.AddScoped<IWorkoutInstructorRepository, WorkoutInstructorRepository>();
 builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
-    options.Password.RequireDigit = false;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
+    options.User.RequireUniqueEmail = true;
     options.Password.RequiredLength = 6;
+    options.Password.RequireDigit = true;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
 })
-    
+
 .AddEntityFrameworkStores<DataContext>()
 .AddDefaultTokenProviders();
 
-builder.Services.AddScoped<Business.Services.AuthService>();
 
 builder.Services.AddCors(p =>
 {
