@@ -11,7 +11,10 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
+
 builder.Services.AddDbContext<DataContext>(x => x.UseSqlServer(builder.Configuration.GetConnectionString("LocalDB")));
+
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<IWorkoutRepository, WorkoutRepository>();
 builder.Services.AddScoped<IWorkoutCustomerRepository, WorkoutCustomerRepository>();
