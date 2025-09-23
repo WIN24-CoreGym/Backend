@@ -18,6 +18,8 @@ builder.Services.AddScoped<IWorkoutCustomerRepository, WorkoutCustomerRepository
 builder.Services.AddScoped<IWorkoutLocationRepository, WorkoutLocationRepository>();
 builder.Services.AddScoped<IWorkoutInstructorRepository, WorkoutInstructorRepository>();
 builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
+builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
+
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
@@ -48,6 +50,12 @@ builder.Services.AddSwaggerGen();
 //builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    await Business.Data.DbInitializer.SeedRolesAsync(services);
+}
 
 if (app.Environment.IsDevelopment())
 {
