@@ -100,7 +100,7 @@ public class AuthController : ControllerBase
         if (user == null)
             return Ok("If account exists, a reset email has been sent.");
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var resetLink = $"https://localhost:5173/reset-password?token={Uri.EscapeDataString(token)}&email={user.Email}";
+        var resetLink = $"http://localhost:5173/reset-password?token={Uri.EscapeDataString(token)}&email={user.Email}";
 
         await _emailService.SendAsync(user.Email, "Password Reset",
             $"Klicka här för att återställa ditt lösenord: {resetLink}");
