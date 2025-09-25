@@ -34,6 +34,10 @@ builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
 
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddCors(p =>
 {
@@ -47,6 +51,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    await Business.Data.DbInitializer.SeedRolesAsync(services);
+}
 
 if (app.Environment.IsDevelopment())
 {
