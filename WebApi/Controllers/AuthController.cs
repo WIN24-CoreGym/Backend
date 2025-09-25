@@ -1,41 +1,36 @@
 ﻿using Business.Dtos;
 using Business.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 
-namespace WebApi.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class AuthController : ControllerBase
+namespace WebApi.Controllers
 {
-    private readonly AuthService _authService;
-
-    public AuthController(AuthService authService)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
     {
-        _authService = authService;
-    }
+        private readonly AuthService _authService;
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterDto dto)
-    {
-        var result = await _authService.RegisterAsync(dto);
-        if (!result.Succeeded)
+        public AuthController(AuthService authService)
         {
-            return BadRequest(result.Errors);
+            _authService = authService;
         }
 
-        return Ok(new { message = "User registered successfully!" });
-    }
-
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto dto)
-    {
-        var result = await _authService.LoginAsync(dto);
-        if (!result.Succeeded)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            return Unauthorized(new { message = "Fel e-post eller lösenord."});
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _authService.RegisterAsync(dto);
+            if (result.Succeeded)
+            {
+                return Ok(new { Message = "User registered successfully" });
+            }
+
+            // Returnera felmeddelanden
+            var errors = result.Errors.Select(e => e.Description).ToList();
+            return BadRequest(new { Errors = errors });
         }
-        return Ok(new { token = "jwt-token-here" });
     }
 }
