@@ -69,7 +69,7 @@ public class CustomerService(UserManager<AppUser> userManager, IAppUserRepositor
         var customersDto = customers.Select(x => new CustomerDto
         {
             UserId = x.Id,
-            Email = x.Id,
+            Email = x.Email!,
             FirstName = x.FirstName,
             LastName = x.LastName
         });
