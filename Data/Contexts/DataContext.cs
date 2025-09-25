@@ -12,7 +12,6 @@ public class DataContext(DbContextOptions<DataContext> options) : IdentityDbCont
     public DbSet<WorkoutLocationEntity> WorkoutLocation { get; set; }
     public DbSet<InstructorEntity> Instructor { get; set; }
 
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Workout
@@ -28,17 +27,14 @@ public class DataContext(DbContextOptions<DataContext> options) : IdentityDbCont
             .HasMany(w => w.Instructors)
             .WithOne(i => i.Workout);
 
-
         // Instructor
         modelBuilder.Entity<InstructorEntity>()
             .HasMany(i => i.WorkoutInstructors)
             .WithOne(wi => wi.Instructor);
 
-
         // WorkoutInstructor
         modelBuilder.Entity<WorkoutInstructorEntity>()
             .HasKey(wi => new { wi.WorkoutId, wi.InstructorId });
-
 
         // WorkoutCustomer
         modelBuilder.Entity<WorkoutCustomerEntity>()
@@ -49,6 +45,17 @@ public class DataContext(DbContextOptions<DataContext> options) : IdentityDbCont
             .WithMany(c => c.WorkoutIds)
             .HasForeignKey(wc => wc.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // --- Seeding ---
+        modelBuilder.Entity<WorkoutLocationEntity>().HasData(
+            new WorkoutLocationEntity { Id = 1, Name = "Main Hall" },
+            new WorkoutLocationEntity { Id = 2, Name = "Studio A" }
+        );
+
+        modelBuilder.Entity<InstructorEntity>().HasData(
+            new InstructorEntity { Id = 1, FirstName = "Sara", LastName = "Ali" },
+            new InstructorEntity { Id = 2, FirstName = "Omar", LastName = "Noor" }
+        );
 
         base.OnModelCreating(modelBuilder);
     }

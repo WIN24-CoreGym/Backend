@@ -1,48 +1,77 @@
-﻿using Business.Factories;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Business.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using Business.Models;
+using Business.Dtos.Workouts;
 
 namespace WebApi.Controllers;
-[Route("api/[controller]")]
+
 [ApiController]
+[Route("api/[controller]")]
 public class WorkoutsController(IWorkoutService workoutService) : ControllerBase
 {
     private readonly IWorkoutService _workoutService = workoutService;
 
-    // Customer, get available workouts (upcoming & not fully booked)
-    // localhost/api/Workouts/Customer/GetAvailableWorkouts
-    [HttpGet("Customer/GetAvailableWorkouts")]
-    public async Task<IActionResult> CustomerGetAvailableWorkouts()
+    // GET: api/workouts
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
     {
-        var result = await _workoutService.GetAvailableWorkoutsAsync();
-        // Map data to API dto
-        var data = result.Data!.Select(x => WorkoutFactory.ToCustomerWorkoutsResponse(x));
+        var result = await _workoutService.GetAllWorkoutsAsync();
 
-        return result.Succeeded
-            ? Ok(data)
-            : StatusCode(500, "Failed retrieving workouts.");
+        if (result?.Data is null)
+            return NotFound();
+
+        return Ok(result.Data);
     }
 
-
-    // Customer, get my workouts
-    [HttpGet("Customer/GetMyWorkouts")]
-    [Authorize]
-    public async Task<IActionResult> CustomerGetMyWorkouts()
+    // GET: api/workouts/available
+    [HttpGet("available")]
+    public async Task<IActionResult> GetAvailable()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var result = await _workoutService.GetAvailableWorkoutsAsync();
 
-        if (userId == null)
-            return Unauthorized();
+        if (result?.Data is null)
+            return NotFound();
 
+        return Ok(result.Data);
+    }
+
+    // GET: api/workouts/by-customer/{userId}
+    [HttpGet("by-customer/{userId}")]
+    public async Task<IActionResult> GetByCustomer(string userId)
+    {
         var result = await _workoutService.GetWorkoutsByCustomerIdAsync(userId);
-        // Map data to API dto
-        var data = result.Data!.Select(x => WorkoutFactory.ToCustomerWorkoutsResponse(x));
 
-        return result.Succeeded
-            ? Ok(data)
-            : StatusCode(500, "Failed retrieving workouts.");
+        if (result?.Data is null)
+            return NotFound();
+
+        return Ok(result.Data);
+    }
+
+    // GET: api/workouts/{id}
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var result = await _workoutService.GetWorkoutByIdAsync(id);
+
+        if (result?.Data is null)
+            return NotFound();
+
+        return Ok(result.Data);
+    }
+
+    // POST: api/workouts
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateWorkoutRequest request)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+
+        var response = await _workoutService.CreateAsync(request);
+
+
+        return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
     }
 }
