@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Business.Dtos;
 
-namespace Business.Dtos
+public class RegisterDto
 {
-    public class RegisterDto
-    {
-        [Required] public string FirstName { get; set; } = null!;
-        [Required] public string LastName { get; set; } = null!;
-        [Required, EmailAddress] public string Email { get; set; } = null!;
-        [Required, MinLength(6)] public string Password { get; set; } = null!;
-    }
+    public string Email { get; set; }
+    public string Password { get; set; }
+    public string ConfirmPassword { get; set; }
+    public string Name { get; set; }
+    public string LastName { get; set; }
+
 }

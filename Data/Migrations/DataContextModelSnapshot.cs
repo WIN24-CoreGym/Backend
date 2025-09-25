@@ -34,23 +34,12 @@ namespace Data.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("DateJoined")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -117,6 +106,20 @@ namespace Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Instructor");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            FirstName = "Sara",
+                            LastName = "Ali"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            FirstName = "Omar",
+                            LastName = "Noor"
+                        });
                 });
 
             modelBuilder.Entity("Data.Entities.WorkoutCustomerEntity", b =>
@@ -204,6 +207,18 @@ namespace Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("WorkoutLocation");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Main Hall"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Studio A"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

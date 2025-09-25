@@ -1,35 +1,32 @@
 ﻿using Business.Dtos;
 using Data.Entities;
 using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Business.Services
+namespace Business.Services;
+
+public class AuthService
 {
-    public class AuthService
+    private readonly UserManager<AppUser> _userManager;
+    private readonly SignInManager<AppUser> _signInManager;
+
+    public AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager)
     {
-        private readonly UserManager<AppUser> _userManager;
+        _userManager = userManager;
+        _signInManager = signInManager;
+    }
 
-        public AuthService(UserManager<AppUser> userManager)
-        {
-            _userManager = userManager;
-        }
+    public async Task<IdentityResult> RegisterAsync(RegisterDto dto)
+    {
+        var user = new AppUser {
+            UserName = dto.Email,
+            Email = dto.Email
 
-        public async Task<IdentityResult> RegisterAsync(RegisterDto dto)
-        {
-            var user = new AppUser
-            {
-                UserName = dto.Email,
-                Email = dto.Email,
-                FirstName = dto.FirstName,
-                LastName = dto.LastName,
-                DateJoined = DateTime.UtcNow
-            };
+        };
+        return await _userManager.CreateAsync(user, dto.Password);
+    }
 
-            return await _userManager.CreateAsync(user, dto.Password);
-        }
+    public async Task<SignInResult> LoginAsync(LoginDto dto)
+    {
+        return await _signInManager.PasswordSignInAsync(dto.Email, dto.Password, false, false);
     }
 }

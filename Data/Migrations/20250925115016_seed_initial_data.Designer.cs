@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250916204655_AddCustomUser")]
-    partial class AddCustomUser
+    [Migration("20250925115016_seed_initial_data")]
+    partial class seed_initial_data
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -37,23 +37,12 @@ namespace Data.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("DateJoined")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -99,6 +88,140 @@ namespace Data.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Entities.InstructorEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Instructor");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            FirstName = "Sara",
+                            LastName = "Ali"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            FirstName = "Omar",
+                            LastName = "Noor"
+                        });
+                });
+
+            modelBuilder.Entity("Data.Entities.WorkoutCustomerEntity", b =>
+                {
+                    b.Property<int>("WorkoutId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("BookingDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("WorkoutId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("WorkoutCustomer");
+                });
+
+            modelBuilder.Entity("Data.Entities.WorkoutEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("LocationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxBookings")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId");
+
+                    b.ToTable("Workout");
+                });
+
+            modelBuilder.Entity("Data.Entities.WorkoutInstructorEntity", b =>
+                {
+                    b.Property<int>("WorkoutId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InstructorId")
+                        .HasColumnType("int");
+
+                    b.HasKey("WorkoutId", "InstructorId");
+
+                    b.HasIndex("InstructorId");
+
+                    b.ToTable("WorkoutInstructor");
+                });
+
+            modelBuilder.Entity("Data.Entities.WorkoutLocationEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("WorkoutLocation");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Main Hall"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Studio A"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -234,6 +357,55 @@ namespace Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Data.Entities.WorkoutCustomerEntity", b =>
+                {
+                    b.HasOne("Data.Entities.AppUser", "Customer")
+                        .WithMany("WorkoutIds")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Data.Entities.WorkoutEntity", "Workout")
+                        .WithMany("Customers")
+                        .HasForeignKey("WorkoutId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Workout");
+                });
+
+            modelBuilder.Entity("Data.Entities.WorkoutEntity", b =>
+                {
+                    b.HasOne("Data.Entities.WorkoutLocationEntity", "Location")
+                        .WithMany("Workouts")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Location");
+                });
+
+            modelBuilder.Entity("Data.Entities.WorkoutInstructorEntity", b =>
+                {
+                    b.HasOne("Data.Entities.InstructorEntity", "Instructor")
+                        .WithMany("WorkoutInstructors")
+                        .HasForeignKey("InstructorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Data.Entities.WorkoutEntity", "Workout")
+                        .WithMany("Instructors")
+                        .HasForeignKey("WorkoutId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Instructor");
+
+                    b.Navigation("Workout");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -283,6 +455,28 @@ namespace Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Data.Entities.AppUser", b =>
+                {
+                    b.Navigation("WorkoutIds");
+                });
+
+            modelBuilder.Entity("Data.Entities.InstructorEntity", b =>
+                {
+                    b.Navigation("WorkoutInstructors");
+                });
+
+            modelBuilder.Entity("Data.Entities.WorkoutEntity", b =>
+                {
+                    b.Navigation("Customers");
+
+                    b.Navigation("Instructors");
+                });
+
+            modelBuilder.Entity("Data.Entities.WorkoutLocationEntity", b =>
+                {
+                    b.Navigation("Workouts");
                 });
 #pragma warning restore 612, 618
         }
