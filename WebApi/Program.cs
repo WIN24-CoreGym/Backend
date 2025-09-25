@@ -33,11 +33,12 @@ builder.Services.AddScoped<IWorkoutInstructorRepository, WorkoutInstructorReposi
 builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
 
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
-builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IInstructorService, InstructorService>();
 
 builder.Services.AddCors(p =>
 {

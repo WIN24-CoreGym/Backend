@@ -103,6 +103,27 @@ public abstract class BaseRepository<TEntity>(DataContext context) : IBaseReposi
         return RepositoryResult<IEnumerable<TEntity>>.Ok(entities);
     }
 
+    public virtual async Task<RepositoryResult<TEntity>> GetOneByQueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>>? queryBuilder = null)
+    {
+        try
+        {
+            IQueryable<TEntity> query = _dbSet;
+
+            if (queryBuilder != null)
+                query = queryBuilder(query);
+
+            var entity = await query.FirstOrDefaultAsync();
+            return (entity != null)
+                ? RepositoryResult<TEntity>.Ok(entity)
+                : RepositoryResult<TEntity>.NotFound("Entity not found.");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.Message);
+            return RepositoryResult<TEntity>.InternalServerError($"Exception occurred in {MethodBase.GetCurrentMethod()!.Name}.");
+        }
+    }
+
     public virtual async Task<RepositoryResult<TEntity>> GetOneAsync(Expression<Func<TEntity, bool>> where, params Expression<Func<TEntity, object>>[] includes)
     {
         try

@@ -12,6 +12,7 @@ public interface IBaseRepository<TEntity> where TEntity : class
     Task<RepositoryResult<IEnumerable<TEntity>>> GetAllAsync(bool orderByDescending = false, Expression<Func<TEntity, object>>? sortBy = null, Expression<Func<TEntity, bool>>? where = null, params Expression<Func<TEntity, object>>[] includes);
     Task<RepositoryResult<IEnumerable<TEntity>>> GetByQueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>>? queryBuilder = null);
     Task<RepositoryResult<TEntity>> GetOneAsync(Expression<Func<TEntity, bool>> where, params Expression<Func<TEntity, object>>[] includes);
+    Task<RepositoryResult<TEntity>> GetOneByQueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>>? queryBuilder = null);
     Task RollbackTransactionAsync();
     Task<RepositoryResult<bool?>> SaveAsync();
     RepositoryResult<bool?> Update(TEntity entity);
