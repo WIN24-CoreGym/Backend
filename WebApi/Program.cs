@@ -26,6 +26,7 @@ builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
