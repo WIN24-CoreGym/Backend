@@ -116,7 +116,7 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Instructor");
+                    b.ToTable("Instructor", (string)null);
                 });
 
             modelBuilder.Entity("Data.Entities.WorkoutCustomerEntity", b =>
@@ -134,7 +134,7 @@ namespace Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("WorkoutCustomer");
+                    b.ToTable("WorkoutCustomer", (string)null);
                 });
 
             modelBuilder.Entity("Data.Entities.WorkoutEntity", b =>
@@ -171,7 +171,7 @@ namespace Data.Migrations
 
                     b.HasIndex("LocationId");
 
-                    b.ToTable("Workout");
+                    b.ToTable("Workout", (string)null);
                 });
 
             modelBuilder.Entity("Data.Entities.WorkoutInstructorEntity", b =>
@@ -186,7 +186,7 @@ namespace Data.Migrations
 
                     b.HasIndex("InstructorId");
 
-                    b.ToTable("WorkoutInstructor");
+                    b.ToTable("WorkoutInstructor", (string)null);
                 });
 
             modelBuilder.Entity("Data.Entities.WorkoutLocationEntity", b =>
@@ -203,7 +203,7 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkoutLocation");
+                    b.ToTable("WorkoutLocation", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
