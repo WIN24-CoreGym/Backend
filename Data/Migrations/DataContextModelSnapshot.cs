@@ -106,6 +106,20 @@ namespace Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Instructor");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            FirstName = "Sara",
+                            LastName = "Ali"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            FirstName = "Omar",
+                            LastName = "Noor"
+                        });
                 });
 
             modelBuilder.Entity("Data.Entities.WorkoutCustomerEntity", b =>
@@ -193,6 +207,18 @@ namespace Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("WorkoutLocation");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Main Hall"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Studio A"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
