@@ -1,6 +1,9 @@
 ﻿using Business.Dtos;
 using Business.Interfaces;
 using Business.Services;
+using Data.Entities;
+using Data.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -11,10 +14,14 @@ namespace WebApi.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly UserManager<AppUser> _userManager;
+    private readonly IEmailService _emailService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, UserManager<AppUser> userManager, IEmailService emailService)
     {
         _authService = authService;
+        _userManager = userManager;
+        _emailService = emailService;
     }
 
     [HttpPost("register")]
@@ -84,5 +91,35 @@ public class AuthController : ControllerBase
             Email = user.Email,
             Created = user.Created
         });
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+    {
+        var user = await _userManager.FindByEmailAsync(dto.Email);
+        if (user == null)
+            return Ok("If account exists, a reset email has been sent.");
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var resetLink = $"http://localhost:5173/reset-password?token={Uri.EscapeDataString(token)}&email={user.Email}";
+
+        await _emailService.SendAsync(user.Email, "Password Reset",
+            $"Klicka här för att återställa ditt lösenord: {resetLink}");
+        return Ok("If account exists, a reset email has been sent.");
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+    {
+        var user = await _userManager.FindByEmailAsync(dto.Email);
+        if (user == null)
+            return BadRequest("Invalid request.");
+
+        var decodedToken = Uri.UnescapeDataString(dto.Token);
+        var result = await _userManager.ResetPasswordAsync(user, decodedToken, dto.NewPassword);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+
+        return Ok("Password has been reset.");
     }
 }

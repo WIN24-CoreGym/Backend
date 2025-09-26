@@ -1,35 +1,42 @@
-﻿using Business.Factories;
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Business.Factories;
 using Business.Interfaces;
 using Business.Models;
 using Business.Models.Results;
+using Business.Dtos.Workouts;
+using Business.Models.Mappers;       
+using Data.Contexts;                  
 using Data.Entities;
 using Data.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Business.Services;
-public class WorkoutService(IWorkoutRepository workoutRepository, UserManager<AppUser> userManager) : IWorkoutService
+
+public class WorkoutService(DataContext ctx, IWorkoutRepository workoutRepository, UserManager<AppUser> userManager) : IWorkoutService
 {
+    private readonly DataContext _ctx = ctx;
     private readonly IWorkoutRepository _workoutRepository = workoutRepository;
     private readonly UserManager<AppUser> _userManager = userManager;
 
-
-    // READ
     public async Task<WorkoutResult<IEnumerable<WorkoutModel>>> GetAllWorkoutsAsync()
     {
         var repositoryResult = await _workoutRepository.GetByQueryAsync(query => query
             .Include(x => x.Location)
-            .Include(x => x.Instructors)
-            .ThenInclude(x => x.Instructor)
+            .Include(x => x.Instructors).ThenInclude(x => x.Instructor)
             .Include(x => x.Customers));
 
         if (!repositoryResult.Succeeded)
             return WorkoutResult<IEnumerable<WorkoutModel>>.InternalServerError("Failed retrieving workout entities.");
 
         var entities = repositoryResult.Data ?? [];
-        var workouts = entities?.Select(x => WorkoutFactory.ToModel(x));
+        var workouts = entities.Select(WorkoutFactory.ToModel);
 
-        return WorkoutResult<IEnumerable<WorkoutModel>>.Ok(workouts!);
+        return WorkoutResult<IEnumerable<WorkoutModel>>.Ok(workouts);
     }
 
     public async Task<WorkoutResult<IEnumerable<WorkoutModel>>> GetAvailableWorkoutsAsync()
@@ -37,64 +44,50 @@ public class WorkoutService(IWorkoutRepository workoutRepository, UserManager<Ap
         var repositoryResult = await _workoutRepository.GetByQueryAsync(query => query
             .Where(x => x.Customers.Count() < x.MaxBookings && x.StartDate > DateTime.Now)
             .Include(x => x.Location)
-            .Include(x => x.Instructors)
-            .ThenInclude(x => x.Instructor)
+            .Include(x => x.Instructors).ThenInclude(x => x.Instructor)
             .Include(x => x.Customers));
 
         if (!repositoryResult.Succeeded)
             return WorkoutResult<IEnumerable<WorkoutModel>>.InternalServerError("Failed retrieving workout entities.");
 
         var entities = repositoryResult.Data ?? [];
-        var workouts = entities?.Select(x => WorkoutFactory.ToModel(x));
+        var workouts = entities.Select(WorkoutFactory.ToModel);
 
-        return WorkoutResult<IEnumerable<WorkoutModel>>.Ok(workouts!);
+        return WorkoutResult<IEnumerable<WorkoutModel>>.Ok(workouts);
     }
 
     public async Task<WorkoutResult<IEnumerable<WorkoutModel>>> GetWorkoutsByCustomerIdAsync(string userId)
     {
         var repositoryResult = await _workoutRepository.GetByQueryAsync(query => query
-            .Where(x => x.Customers.Any(x => x.UserId == userId))
+            .Where(x => x.Customers.Any(c => c.UserId == userId))
             .Include(x => x.Location)
-            .Include(x => x.Instructors)
-            .ThenInclude(x => x.Instructor));
+            .Include(x => x.Instructors).ThenInclude(x => x.Instructor));
 
         if (!repositoryResult.Succeeded)
             return WorkoutResult<IEnumerable<WorkoutModel>>.InternalServerError("Failed retrieving workout entities.");
 
         var entities = repositoryResult.Data ?? [];
-        var workouts = entities?.Select(x => WorkoutFactory.ToModel(x));
+        var workouts = entities.Select(WorkoutFactory.ToModel);
 
-        return WorkoutResult<IEnumerable<WorkoutModel>>.Ok(workouts!);
+        return WorkoutResult<IEnumerable<WorkoutModel>>.Ok(workouts);
     }
 
-    // Create workout - Admin only
-
-    // CREATE
-    public async Task<WorkoutResult<WorkoutModel>> CreateWorkoutAsync(WorkoutModel workoutModel)
+    public async Task<WorkoutResult<WorkoutModel>> GetWorkoutByIdAsync(int id)
     {
-        try
-        {
-            // Konvertera WorkoutModel till WorkoutEntity via factory
-            var entity = WorkoutFactory.ToEntity(workoutModel);
+        var repositoryResult = await _workoutRepository.GetByQueryAsync(query => query
+            .Where(x => x.Id == id)
+            .Include(x => x.Location)
+            .Include(x => x.Instructors).ThenInclude(x => x.Instructor)
+            .Include(x => x.Customers));
 
-            // Lägg till entiteten i databasen
-            var addResult = await _workoutRepository.AddAsync(entity);
-            if (!addResult.Succeeded)
-                return WorkoutResult<WorkoutModel>.InternalServerError("Failed to add workout entity.");
+        if (!repositoryResult.Succeeded)
+            return WorkoutResult<WorkoutModel>.InternalServerError("Failed retrieving workout entity.");
 
-            // Spara ändringar
-            var saveResult = await _workoutRepository.SaveAsync();
-            if (!saveResult.Succeeded)
-                return WorkoutResult<WorkoutModel>.InternalServerError("Failed to save workout.");
+        var entity = repositoryResult.Data?.FirstOrDefault();
+        if (entity is null)
+            return WorkoutResult<WorkoutModel>.NotFound("Workout not found.");
 
-            // Hämta det skapade träningspasset med alla inkluderade data
-            var createdWorkout = await GetWorkoutByIdAsync(entity.Id);
-            return createdWorkout;
-        }
-        catch (Exception)
-        {
-            return WorkoutResult<WorkoutModel>.InternalServerError("Exception occurred while creating workout.");
-        }
+        return WorkoutResult<WorkoutModel>.Ok(WorkoutFactory.ToModel(entity));
     }
 
     // UPDATE
@@ -159,26 +152,40 @@ public class WorkoutService(IWorkoutRepository workoutRepository, UserManager<Ap
         }
     }
 
-    // READ BY ID
-    public async Task<WorkoutResult<WorkoutModel>> GetWorkoutByIdAsync(int workoutId)
+    // CREATE - från main branch
+    public async Task<WorkoutResponse> CreateAsync(CreateWorkoutRequest req, CancellationToken ct = default)
     {
-        try
-        {
-            var repositoryResult = await _workoutRepository.GetOneAsync(
-                x => x.Id == workoutId,
-                x => x.Location,
-                x => x.Instructors,
-                x => x.Customers);
+        var locationExists = await _ctx.WorkoutLocation.AnyAsync(l => l.Id == req.LocationId, ct);
+        if (!locationExists)
+            throw new KeyNotFoundException($"Location with id {req.LocationId} was not found.");
 
-            if (!repositoryResult.Succeeded)
-                return WorkoutResult<WorkoutModel>.NotFound("Workout not found.");
+        var instructorExists = await _ctx.Instructor.AnyAsync(i => i.Id == req.InstructorId, ct);
+        if (!instructorExists)
+            throw new KeyNotFoundException($"Instructor with id {req.InstructorId} was not found.");
 
-            var workout = WorkoutFactory.ToModel(repositoryResult.Data!);
-            return WorkoutResult<WorkoutModel>.Ok(workout);
-        }
-        catch (Exception)
+        var entity = req.ToEntity();
+
+        if (entity.MaxBookings <= 0)
+            entity.MaxBookings = 20;
+        if (entity.EndDate == default)
+            entity.EndDate = entity.StartDate;
+
+        _ctx.Workout.Add(entity);
+        await _ctx.SaveChangesAsync(ct);
+
+        var wi = new WorkoutInstructorEntity
         {
-            return WorkoutResult<WorkoutModel>.InternalServerError("Exception occurred while retrieving workout.");
-        }
+            WorkoutId = entity.Id,
+            InstructorId = req.InstructorId
+        };
+        _ctx.WorkoutInstructor.Add(wi);
+        await _ctx.SaveChangesAsync(ct);
+
+        await _ctx.Entry(entity).Reference(e => e.Location).LoadAsync(ct);
+        await _ctx.Entry(entity).Collection(e => e.Instructors)
+                 .Query().Include(i => i.Instructor)
+                 .LoadAsync(ct);
+
+        return entity.ToResponse();
     }
 }

@@ -1,72 +1,83 @@
-﻿using Business.Factories;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Business.Interfaces;
 using Business.Models;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using Business.Dtos.Workouts;
+using Business.Factories;
 
 namespace WebApi.Controllers;
-[Route("api/[controller]")]
+
 [ApiController]
+[Route("api/[controller]")]
 public class WorkoutsController(IWorkoutService workoutService) : ControllerBase
 {
     private readonly IWorkoutService _workoutService = workoutService;
 
-    // Customer, get available workouts (upcoming & not fully booked)
-    // localhost/api/Workouts/Customer/GetAvailableWorkouts
-    [HttpGet("Customer/GetAvailableWorkouts")]
-    public async Task<IActionResult> CustomerGetAvailableWorkouts()
+    // GET: api/workouts
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _workoutService.GetAllWorkoutsAsync();
+
+        if (result?.Data is null)
+            return NotFound();
+
+        return Ok(result.Data);
+    }
+
+    // GET: api/workouts/available
+    [HttpGet("available")]
+    public async Task<IActionResult> GetAvailable()
     {
         var result = await _workoutService.GetAvailableWorkoutsAsync();
-        // Map data to API dto
-        var data = result.Data!.Select(x => WorkoutFactory.ToCustomerWorkoutsResponse(x));
 
-        return result.Succeeded
-            ? Ok(data)
-            : StatusCode(500, "Failed retrieving workouts.");
+        if (result?.Data is null)
+            return NotFound();
+
+        return Ok(result.Data);
     }
 
-
-    // Customer, get my workouts
-    [HttpGet("Customer/GetMyWorkouts")]
-    [Authorize]
-    public async Task<IActionResult> CustomerGetMyWorkouts()
+    // GET: api/workouts/by-customer/{userId}
+    [HttpGet("by-customer/{userId}")]
+    public async Task<IActionResult> GetByCustomer(string userId)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (userId == null)
-            return Unauthorized();
-
         var result = await _workoutService.GetWorkoutsByCustomerIdAsync(userId);
-        // Map data to API dto
-        var data = result.Data!.Select(x => WorkoutFactory.ToCustomerWorkoutsResponse(x));
 
-        return result.Succeeded
-            ? Ok(data)
-            : StatusCode(500, "Failed retrieving workouts.");
+        if (result?.Data is null)
+            return NotFound();
+
+        return Ok(result.Data);
     }
 
-
-    // Get workout by id
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetWorkoutById(int id)
+    // GET: api/workouts/{id}
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id)
     {
         var result = await _workoutService.GetWorkoutByIdAsync(id);
 
-        if (!result.Succeeded)
+        if (!result.Succeeded || result.Data is null)
             return NotFound("Workout not found.");
 
-        var data = WorkoutFactory.ToCustomerWorkoutsResponse(result.Data!);
+        var data = WorkoutFactory.ToCustomerWorkoutsResponse(result.Data);
         return Ok(data);
     }
 
+    // POST: api/workouts
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateWorkoutRequest request)
+    {
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
 
+        var response = await _workoutService.CreateAsync(request);
 
+        return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
+    }
 
-
-    //  update workout
-
+    // PUT: api/workouts/{id}
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateWorkout(int id, WorkoutModel workoutModel)
@@ -82,25 +93,20 @@ public class WorkoutsController(IWorkoutService workoutService) : ControllerBase
         return Ok(data);
     }
 
-    //  delete workout
-
-
-
-
+    // DELETE: api/workouts/{id}
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-
     public async Task<IActionResult> DeleteWorkout(int id)
     {
         var result = await _workoutService.DeleteWorkoutAsync(id);
 
         if (!result.Succeeded)
             return StatusCode(500, "Failed deleting workout.");
+        
         return NoContent();
     }
 
-
-
+    // GET: api/workouts/Admin/GetAllWorkouts
     [HttpGet("Admin/GetAllWorkouts")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AdminGetAllWorkoutsAsync()
@@ -110,11 +116,11 @@ public class WorkoutsController(IWorkoutService workoutService) : ControllerBase
         if (!result.Succeeded)
             return StatusCode(500, "Failed retrieving workouts.");
 
-    var data = result.Data!.Select(x => WorkoutFactory.ToCustomerWorkoutsResponse(x));
-         return Ok(data);
-
+        var data = result.Data!.Select(x => WorkoutFactory.ToCustomerWorkoutsResponse(x));
+        return Ok(data);
     }
 
+    // GET: api/workouts/Admin/GetWorkoutBookingStatus
     [HttpGet("Admin/GetWorkoutBookingStatus")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AdminGetWorkoutBookingStatus()
@@ -124,9 +130,9 @@ public class WorkoutsController(IWorkoutService workoutService) : ControllerBase
         if (!result.Succeeded)
             return StatusCode(500, "Failed retrieving workouts.");
 
-        var  bookingsStatus = result.Data!.Select(workout => new
+        var bookingsStatus = result.Data!.Select(workout => new
         {
-            GetWorkoutById = workout.Id,
+            WorkoutId = workout.Id,
             Title = workout.Title,
             StartDate = workout.StartDate,
             MaxBookings = workout.MaxBookings,
@@ -134,12 +140,7 @@ public class WorkoutsController(IWorkoutService workoutService) : ControllerBase
             AvailableSpots = workout.MaxBookings - (workout.WorkoutCustomers?.Count() ?? 0),
             IsFullyBooked = (workout.WorkoutCustomers?.Count() ?? 0) >= workout.MaxBookings
         });
-         return Ok(bookingsStatus);
+        
+        return Ok(bookingsStatus);
     }
-
-
-
 }
-
-
-
