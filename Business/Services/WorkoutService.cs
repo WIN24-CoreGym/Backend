@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
@@ -17,13 +17,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Business.Services;
 
-
 public class WorkoutService(DataContext ctx, IWorkoutRepository workoutRepository, UserManager<AppUser> userManager) : IWorkoutService
 {
     private readonly DataContext _ctx = ctx;
     private readonly IWorkoutRepository _workoutRepository = workoutRepository;
     private readonly UserManager<AppUser> _userManager = userManager;
-
 
     public async Task<WorkoutResult<IEnumerable<WorkoutModel>>> GetAllWorkoutsAsync()
     {
@@ -92,6 +90,69 @@ public class WorkoutService(DataContext ctx, IWorkoutRepository workoutRepositor
         return WorkoutResult<WorkoutModel>.Ok(WorkoutFactory.ToModel(entity));
     }
 
+    // UPDATE
+    public async Task<WorkoutResult<WorkoutModel>> UpdateWorkoutAsync(int workoutId, WorkoutModel workoutModel)
+    {
+        try
+        {
+            // Kontrollera att träningspasset finns
+            var existingResult = await _workoutRepository.GetOneAsync(x => x.Id == workoutId);
+            if (!existingResult.Succeeded)
+                return WorkoutResult<WorkoutModel>.NotFound("Workout not found.");
+
+            // Konvertera till entity och sätt rätt ID
+            var entity = WorkoutFactory.ToEntity(workoutModel);
+            entity.Id = workoutId;
+
+            // Uppdatera entiteten
+            var updateResult = _workoutRepository.Update(entity);
+            if (!updateResult.Succeeded)
+                return WorkoutResult<WorkoutModel>.InternalServerError("Failed to update workout entity.");
+
+            // Spara ändringar
+            var saveResult = await _workoutRepository.SaveAsync();
+            if (!saveResult.Succeeded)
+                return WorkoutResult<WorkoutModel>.InternalServerError("Failed to save workout changes.");
+
+            // Returnera det uppdaterade träningspasset
+            var updatedWorkout = await GetWorkoutByIdAsync(workoutId);
+            return updatedWorkout;
+        }
+        catch (Exception)
+        {
+            return WorkoutResult<WorkoutModel>.InternalServerError("Exception occurred while updating workout.");
+        }
+    }
+
+    // DELETE
+    public async Task<WorkoutResult<bool?>> DeleteWorkoutAsync(int workoutId)
+    {
+        try
+        {
+            // Kontrollera att träningspasset finns
+            var existingResult = await _workoutRepository.GetOneAsync(x => x.Id == workoutId);
+            if (!existingResult.Succeeded)
+                return WorkoutResult<bool?>.NotFound("Workout not found.");
+
+            // Ta bort entiteten
+            var deleteResult = _workoutRepository.Delete(existingResult.Data!);
+            if (!deleteResult.Succeeded)
+                return WorkoutResult<bool?>.InternalServerError("Failed to delete workout entity.");
+
+            // Spara ändringar
+            var saveResult = await _workoutRepository.SaveAsync();
+            if (!saveResult.Succeeded)
+                return WorkoutResult<bool?>.InternalServerError("Failed to save workout deletion.");
+
+            return WorkoutResult<bool?>.Ok(true);
+        }
+        catch (Exception)
+        {
+            return WorkoutResult<bool?>.InternalServerError("Exception occurred while deleting workout.");
+        }
+    }
+
+    // CREATE - från main branch
     public async Task<WorkoutResponse> CreateAsync(CreateWorkoutRequest req, CancellationToken ct = default)
     {
         var locationExists = await _ctx.WorkoutLocation.AnyAsync(l => l.Id == req.LocationId, ct);
@@ -127,5 +188,4 @@ public class WorkoutService(DataContext ctx, IWorkoutRepository workoutRepositor
 
         return entity.ToResponse();
     }
-
 }

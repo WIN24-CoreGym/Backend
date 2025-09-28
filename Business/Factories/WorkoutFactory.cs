@@ -63,5 +63,23 @@ public static class WorkoutFactory
                 LastName = i.Instructor!.LastName,
             })
         };
+
+       
+    }
+
+    public static WorkoutEntity ToEntity(WorkoutModel model)
+    {
+        return new WorkoutEntity
+        {
+            Id = model.Id,
+            Title = model.Title,
+            Description = model.Description,
+            StartDate = model.StartDate,
+            EndDate = model.EndDate,
+            LocationId = model.LocationId,
+            MaxBookings = model.MaxBookings,
+            Created = model.Created
+        };
+
     }
 }
