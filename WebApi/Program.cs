@@ -49,6 +49,8 @@ builder.Services.AddCors(p =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IWorkoutService, WorkoutService>();
+
 
 var app = builder.Build();
 

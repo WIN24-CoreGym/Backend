@@ -1,89 +1,43 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Business.Interfaces;
-using Business.Models;
+﻿using Business.Interfaces;
 using Business.Dtos.Workouts;
-
-namespace WebApi.Controllers;
+using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("api/[controller]")]
-public class WorkoutsController(IWorkoutService workoutService) : ControllerBase
+public class WorkoutsController : ControllerBase
 {
-    private readonly IWorkoutService _workoutService = workoutService;
+    private readonly IWorkoutService _workoutService;
+    public WorkoutsController(IWorkoutService workoutService) => _workoutService = workoutService;
 
-    // GET: api/workouts
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var result = await _workoutService.GetAllWorkoutsAsync();
-
-        if (result?.Data is null)
-            return NotFound();
-
-        return Ok(result.Data);
-    }
-
-    // GET: api/workouts/available
-    [HttpGet("available")]
-    public async Task<IActionResult> GetAvailable()
-    {
-        var result = await _workoutService.GetAvailableWorkoutsAsync();
-
-        if (result?.Data is null)
-            return NotFound();
-
-        return Ok(result.Data);
-    }
-
-    // GET: api/workouts/by-customer/{userId}
-    [HttpGet("by-customer/{userId}")]
-    public async Task<IActionResult> GetByCustomer(string userId)
-    {
-        var result = await _workoutService.GetWorkoutsByCustomerIdAsync(userId);
-
-        if (result?.Data is null)
-            return NotFound();
-
-        return Ok(result.Data);
-    }
-
-    // GET: api/workouts/{id}
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var result = await _workoutService.GetWorkoutByIdAsync(id);
 
-        if (result?.Data is null)
-            return NotFound();
+        if (!result.Succeeded)
+            return Problem(title: "Error", statusCode: 500);
+
+        if (result.Data is null)
+            return NotFound("Workout not found.");
 
         return Ok(result.Data);
     }
 
-    // POST: api/workouts
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateWorkoutRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateWorkoutRequest request, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return ValidationProblem(ModelState);
-
-
-        var response = await _workoutService.CreateAsync(request);
-
-
-        return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
+        try
+        {
+            var created = await _workoutService.CreateAsync(request, ct);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Problem(title: "NotFound", detail: ex.Message, statusCode: 404);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Problem(title: "ValidationError", detail: ex.Message, statusCode: 400);
+        }
     }
-
-    [HttpPost("workouts")]
-    public async Task<IActionResult> CreateWorkout([FromBody] WorkoutCreateRequest req)
-    {
-
-        if (req.Date < DateOnly.FromDateTime(DateTime.UtcNow.Date))
-            return Problem(detail: "Date must be today or later.", statusCode: 400, title: "ValidationError");
-
-        var result = await _workoutService.CreateAsync(req);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-    }
-
 }
