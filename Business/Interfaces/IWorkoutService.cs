@@ -14,4 +14,5 @@ public interface IWorkoutService
     Task<WorkoutResult<IEnumerable<WorkoutModel>>> GetWorkoutsByCustomerIdAsync(string userId);
     Task<WorkoutResult<WorkoutModel>> GetWorkoutByIdAsync(int id);          
     Task<WorkoutResponse> CreateAsync(CreateWorkoutRequest req, CancellationToken ct = default);
+    Task<WorkoutResponse> CreateAsync(WorkoutCreateRequest req);
 }

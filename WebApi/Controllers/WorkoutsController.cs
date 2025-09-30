@@ -74,4 +74,16 @@ public class WorkoutsController(IWorkoutService workoutService) : ControllerBase
 
         return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
     }
+
+    [HttpPost("workouts")]
+    public async Task<IActionResult> CreateWorkout([FromBody] WorkoutCreateRequest req)
+    {
+
+        if (req.Date < DateOnly.FromDateTime(DateTime.UtcNow.Date))
+            return Problem(detail: "Date must be today or later.", statusCode: 400, title: "ValidationError");
+
+        var result = await _workoutService.CreateAsync(req);
+        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+    }
+
 }

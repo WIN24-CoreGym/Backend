@@ -8,8 +8,8 @@ using Business.Interfaces;
 using Business.Models;
 using Business.Models.Results;
 using Business.Dtos.Workouts;
-using Business.Models.Mappers;       
-using Data.Contexts;                  
+using Business.Models.Mappers;
+using Data.Contexts;
 using Data.Entities;
 using Data.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -17,13 +17,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Business.Services;
 
-
 public class WorkoutService(DataContext ctx, IWorkoutRepository workoutRepository, UserManager<AppUser> userManager) : IWorkoutService
 {
     private readonly DataContext _ctx = ctx;
     private readonly IWorkoutRepository _workoutRepository = workoutRepository;
     private readonly UserManager<AppUser> _userManager = userManager;
-
 
     public async Task<WorkoutResult<IEnumerable<WorkoutModel>>> GetAllWorkoutsAsync()
     {
@@ -94,6 +92,9 @@ public class WorkoutService(DataContext ctx, IWorkoutRepository workoutRepositor
 
     public async Task<WorkoutResponse> CreateAsync(CreateWorkoutRequest req, CancellationToken ct = default)
     {
+        if (req.StartDate < DateTime.UtcNow)
+            throw new InvalidOperationException("Start date must be today or later.");
+
         var locationExists = await _ctx.WorkoutLocation.AnyAsync(l => l.Id == req.LocationId, ct);
         if (!locationExists)
             throw new KeyNotFoundException($"Location with id {req.LocationId} was not found.");
@@ -101,6 +102,12 @@ public class WorkoutService(DataContext ctx, IWorkoutRepository workoutRepositor
         var instructorExists = await _ctx.Instructor.AnyAsync(i => i.Id == req.InstructorId, ct);
         if (!instructorExists)
             throw new KeyNotFoundException($"Instructor with id {req.InstructorId} was not found.");
+
+        var clash = await _ctx.Workout.AnyAsync(w =>
+            w.StartDate == req.StartDate &&
+            w.LocationId == req.LocationId, ct);
+        if (clash)
+            throw new InvalidOperationException("This location is already booked at the selected time.");
 
         var entity = req.ToEntity();
 
@@ -127,5 +134,4 @@ public class WorkoutService(DataContext ctx, IWorkoutRepository workoutRepositor
 
         return entity.ToResponse();
     }
-
 }
