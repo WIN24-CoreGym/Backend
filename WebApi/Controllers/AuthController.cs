@@ -16,12 +16,14 @@ public class AuthController : ControllerBase
     private readonly IAuthService _authService;
     private readonly UserManager<AppUser> _userManager;
     private readonly IEmailService _emailService;
+    private readonly SignInManager<AppUser> _signInManager;
 
-    public AuthController(IAuthService authService, UserManager<AppUser> userManager, IEmailService emailService)
+    public AuthController(IAuthService authService, UserManager<AppUser> userManager, IEmailService emailService, SignInManager<AppUser> signInManager)
     {
         _authService = authService;
         _userManager = userManager;
         _emailService = emailService;
+        _signInManager = signInManager;
     }
 
     [HttpPost("register")]
@@ -121,5 +123,11 @@ public class AuthController : ControllerBase
             return BadRequest(result.Errors);
 
         return Ok("Password has been reset.");
+    }
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        await _signInManager.SignOutAsync();
+        return NoContent();
     }
 }
