@@ -124,6 +124,39 @@ public class InstructorService(IInstructorRepository instructorRepository) : IIn
         return InstructorResult<InstructorDto>.Ok(instructor);
     }
 
+    public async Task<InstructorResult<IEnumerable<InstructorDto>>> GetByWorkoutIdAsync(int id)
+    {
+        var result = await _instructorRepository.GetByQueryAsync(query => query
+            .Include(x => x.WorkoutInstructors)
+            .Where(x => x.WorkoutInstructors.Any(x => x.WorkoutId == id)));
+
+        if (result.Data == null)
+            return InstructorResult<IEnumerable<InstructorDto>>.NotFound($"Unable to find any instructors for workout id {id}.");
+
+        var entities = result.Data;
+        var instructors = entities.Where(x => x != null).Select(x => new InstructorDto
+        {
+            Id = x.Id,
+            FirstName = x.FirstName,
+            LastName = x.LastName,
+            Workouts = x.WorkoutInstructors?
+                .Where(x => x.Workout != null)
+                .Select(x => new InstructorWorkoutDto
+                {
+                    Id = x.Workout!.Id,
+                    Title = x.Workout.Title,
+                    Description = x.Workout.Description,
+                    StartDate = x.Workout.StartDate,
+                    EndDate = x.Workout.EndDate,
+                    Location = x.Workout.Location != null ? x.Workout.Location.Name : string.Empty,
+                    MaxBookings = x.Workout.MaxBookings,
+                    Created = x.Workout.Created
+                }).ToList() ?? []
+        });
+
+        return InstructorResult<IEnumerable<InstructorDto>>.Ok(instructors);
+    }
+
     // UPDATE
     public async Task<InstructorResult<InstructorDto>> UpdateAsync(UpdateInstructorDto dto)
     {

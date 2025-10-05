@@ -1,8 +1,8 @@
-﻿using Business.Dtos.API;
+﻿using Business.Dtos.Instructor;
+using Business.Dtos.Workouts;
 using Business.Models;
 using Data.Entities;
 using Microsoft.Identity.Client;
-using WebApi.Dtos;
 
 namespace Business.Factories;
 
@@ -44,16 +44,16 @@ public static class WorkoutFactory
         };
     }
 
-    public static CustomerWorkoutsResponse ToCustomerWorkoutsResponse(WorkoutModel model)
+    public static CustomerWorkoutResponse ToCustomerWorkoutsResponse(WorkoutModel model)
     {
-        return new CustomerWorkoutsResponse
+        return new CustomerWorkoutResponse
         {
             Id = model.Id,
             Title = model.Title,
             Description = model.Description,
             StartDate = model.StartDate,
             EndDate = model.EndDate,
-            Location = model.Location!.Name,
+            Location = model.Location!,
             MaxBookings = model.MaxBookings,
             Created = model.Created,
             Instructors = model.WorkoutInstructors?.Select(i => new CustomerInstructorResponse
@@ -63,8 +63,27 @@ public static class WorkoutFactory
                 LastName = i.Instructor!.LastName,
             })
         };
+    }
 
-       
+    public static AdminWorkoutResponse ToAdminWorkoutsResponse(WorkoutModel model)
+    {
+        return new AdminWorkoutResponse
+        {
+            Id = model.Id,
+            Title = model.Title,
+            Description = model.Description,
+            StartDate = model.StartDate,
+            EndDate = model.EndDate,
+            Location = model.Location!,
+            MaxBookings = model.MaxBookings,
+            Created = model.Created,
+            Instructors = model.WorkoutInstructors?.Select(i => new InstructorDto
+            {
+                Id = i.Instructor!.Id,
+                FirstName = i.Instructor!.FirstName,
+                LastName = i.Instructor!.LastName,
+            }).ToList() ?? [],
+        };
     }
 
     public static WorkoutEntity ToEntity(WorkoutModel model)

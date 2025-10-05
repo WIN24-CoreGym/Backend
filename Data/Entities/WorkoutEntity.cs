@@ -13,10 +13,10 @@ public class WorkoutEntity
     [Column(TypeName = "nvarchar(500)")]
     public string? Description { get; set; }
 
-    [Column(TypeName = "date")]
+    [Column(TypeName = "datetime2")]
     public DateTime StartDate { get; set; }
 
-    [Column(TypeName = "date")]
+    [Column(TypeName = "datetime2")]
     public DateTime EndDate { get; set; }
 
     public int LocationId { get; set; }
