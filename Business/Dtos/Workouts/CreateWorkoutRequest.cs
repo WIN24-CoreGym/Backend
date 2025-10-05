@@ -8,15 +8,20 @@ public class CreateWorkoutRequest
     [Required, StringLength(50)]
     public string Title { get; set; } = null!;
 
-    [Required, DataType(DataType.Date)]
-    public DateTime Date { get; set; }          
-
-    [Required, DataType(DataType.Time)]
-    public TimeSpan Time { get; set; }          
+    public string? Description { get; set; }
 
     [Required]
-    public int LocationId { get; set; }         
+    public DateTime StartDate { get; set; }          
 
     [Required]
-    public int InstructorId { get; set; }      
+    public DateTime EndDate { get; set; }
+
+    [Required]
+    public string Location { get; set; } = null!;
+
+    [Required]
+    public int MaxBookings { get; set; }
+
+    [Required]
+    public IEnumerable<int> InstructorIds { get; set; } = [];
 }

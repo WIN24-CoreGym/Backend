@@ -12,7 +12,7 @@ public interface IWorkoutService
     Task<WorkoutResult<IEnumerable<WorkoutModel>>> GetAvailableWorkoutsAsync();
     Task<WorkoutResult<IEnumerable<WorkoutModel>>> GetWorkoutsByCustomerIdAsync(string userId);
     Task<WorkoutResult<WorkoutModel>> GetWorkoutByIdAsync(int workoutId);
-    Task<WorkoutResult<WorkoutModel>> UpdateWorkoutAsync(int workoutId, WorkoutModel workoutModel);
+    Task<WorkoutResult<WorkoutModel>> UpdateWorkoutAsync(int workoutId, UpdateWorkoutRequest req);
     Task<WorkoutResult<bool?>> DeleteWorkoutAsync(int workoutId);
-    Task<WorkoutResponse> CreateAsync(CreateWorkoutRequest req, CancellationToken ct = default);
+    Task<WorkoutResult<WorkoutModel>> CreateAsync(CreateWorkoutRequest req, CancellationToken ct = default);
 }

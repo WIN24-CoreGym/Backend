@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace WebApi.Controllers;
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")]
+//[Authorize(Roles = "Admin")]
 public class CustomersController(ICustomerService customerService) : ControllerBase
 {
     private readonly ICustomerService _customerService = customerService;

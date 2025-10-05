@@ -8,5 +8,6 @@ public interface IInstructorService
     Task<InstructorResult<InstructorDto>> DeleteByIdAsync(int id);
     Task<InstructorResult<IEnumerable<InstructorDto>>> GetAllAsync();
     Task<InstructorResult<InstructorDto>> GetByIdAsync(int id);
+    Task<InstructorResult<IEnumerable<InstructorDto>>> GetByWorkoutIdAsync(int id);
     Task<InstructorResult<InstructorDto>> UpdateAsync(UpdateInstructorDto dto);
 }

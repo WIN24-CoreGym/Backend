@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace WebApi.Controllers;
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")]
+//[Authorize(Roles = "Admin")]
 public class InstructorsController(IInstructorService instructorService) : ControllerBase
 {
     private readonly IInstructorService _instructorService = instructorService;
@@ -30,6 +30,16 @@ public class InstructorsController(IInstructorService instructorService) : Contr
         return result.Succeeded
             ? Ok(result.Data)
             : StatusCode(result.StatusCode, "Failed retrieving instructor.");
+    }
+
+    [HttpGet("workoutid/{id}")]
+    public async Task<IActionResult> GetInstructorByWorkoutId(int id)
+    {
+        var result = await _instructorService.GetByWorkoutIdAsync(id);
+
+        return result.Succeeded
+            ? Ok(result.Data)
+            : StatusCode(result.StatusCode, "Failed retrieving instructors.");
     }
 
     [HttpPost]

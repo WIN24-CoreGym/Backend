@@ -1,4 +1,4 @@
-﻿namespace Business.Dtos.API;
+﻿namespace Business.Dtos.Instructor;
 public class CustomerInstructorResponse
 {
     public int Id { get; set; }

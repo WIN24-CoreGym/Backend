@@ -7,6 +7,8 @@ using Business.Interfaces;
 using Business.Models;
 using Business.Dtos.Workouts;
 using Business.Factories;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Business.Models.Mappers;
 
 namespace WebApi.Controllers;
 
@@ -17,7 +19,9 @@ public class WorkoutsController : ControllerBase
     private readonly IWorkoutService _workoutService;
     public WorkoutsController(IWorkoutService workoutService) => _workoutService = workoutService;
 
-    [HttpGet("{id:int}")]
+    // PUBLIC ENDPOINTS --------------------------------------------------------------------------------
+    // Get workout details, without customers included
+    [HttpGet("Customer/{id:int}")]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var result = await _workoutService.GetWorkoutByIdAsync(id);
@@ -25,40 +29,58 @@ public class WorkoutsController : ControllerBase
         if (!result.Succeeded || result.Data is null)
             return NotFound("Workout not found.");
 
-        var data = WorkoutFactory.ToCustomerWorkoutsResponse(result.Data);
-        return Ok(data);
+        return Ok(result.Data.ToCustomerResponse());
     }
 
-    [HttpPost]
+    // /api/Workouts/Customer/GetAvailableWorkouts
+    [HttpGet("Customer/AvailableWorkouts")]
+    public async Task<IActionResult> CustomerGetAvailableWorkouts()
+    {
+        var result = await _workoutService.GetAvailableWorkoutsAsync();
+        // Map data to API dto
+        var data = result.Data!.Select(x => x.ToCustomerResponse());
+
+        return result.Succeeded
+            ? Ok(data)
+            : StatusCode(500, "Failed retrieving workouts.");
+    }
+
+    // ADMIN ONLY ENDPOINTS ----------------------------------------------------------------------------
+
+    // POST /api/workouts/admin
+    [HttpPost("Admin")]
+    //[Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateWorkoutRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
         var response = await _workoutService.CreateAsync(request);
+        if (!response.Succeeded || response.Data is null)
+            return StatusCode(500, "Failed creating workout.");
 
-        return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
+        var data = response.Data.ToAdminResponse();
+
+        return CreatedAtAction(nameof(GetById), new { id = response.Data!.Id }, response.Data);
     }
 
-    // PUT: api/workouts/{id}
-    [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateWorkout(int id, WorkoutModel workoutModel)
+    // PUT: api/workouts/admin/{id}
+    [HttpPut("Admin/{id}")]
+    //[Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateWorkout(int id, UpdateWorkoutRequest req)
     {
-        workoutModel.Id = id;
+        var result = await _workoutService.UpdateWorkoutAsync(id, req);
 
-        var result = await _workoutService.UpdateWorkoutAsync(id, workoutModel);
-
-        if (!result.Succeeded)
+        if (!result.Succeeded || result.Data == null)
             return StatusCode(500, "Failed updating workout.");
 
-        var data = WorkoutFactory.ToCustomerWorkoutsResponse(result.Data!);
+        var data = result.Data.ToAdminResponse();
         return Ok(data);
     }
 
-    // DELETE: api/workouts/{id}
-    [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    // DELETE: api/workouts/admin/{id}
+    [HttpDelete("Admin/{id}")]
+    //[Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteWorkout(int id)
     {
         var result = await _workoutService.DeleteWorkoutAsync(id);
@@ -69,9 +91,9 @@ public class WorkoutsController : ControllerBase
         return NoContent();
     }
 
-    // GET: api/workouts/Admin/GetAllWorkouts
-    [HttpGet("Admin/GetAllWorkouts")]
-    [Authorize(Roles = "Admin")]
+    // GET: api/workouts/admin
+    [HttpGet("Admin")]
+    //[Authorize(Roles = "Admin")]
     public async Task<IActionResult> AdminGetAllWorkoutsAsync()
     {
         var result = await _workoutService.GetAllWorkoutsAsync();
@@ -79,13 +101,25 @@ public class WorkoutsController : ControllerBase
         if (!result.Succeeded)
             return StatusCode(500, "Failed retrieving workouts.");
 
-        var data = result.Data!.Select(x => WorkoutFactory.ToCustomerWorkoutsResponse(x));
+        var data = result.Data!.Select(x => x.ToAdminResponse());
         return Ok(data);
     }
 
+    // GET /api/workouts/admin/{id}
+    [HttpGet("Admin/{id:int}")]
+    public async Task<IActionResult> GetByIdForAdmin(int id, CancellationToken ct)
+    {
+        var result = await _workoutService.GetWorkoutByIdAsync(id);
+
+        if (!result.Succeeded || result.Data is null)
+            return NotFound("Workout not found.");
+
+        return Ok(result.Data.ToAdminResponse());
+    }
+
     // GET: api/workouts/Admin/GetWorkoutBookingStatus
-    [HttpGet("Admin/GetWorkoutBookingStatus")]
-    [Authorize(Roles = "Admin")]
+    [HttpGet("Admin/WorkoutBookingStatus")]
+    //[Authorize(Roles = "Admin")]
     public async Task<IActionResult> AdminGetWorkoutBookingStatus()
     {
         var result = await _workoutService.GetAllWorkoutsAsync();
