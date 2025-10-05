@@ -8,8 +8,8 @@ using Business.Interfaces;
 using Business.Models;
 using Business.Models.Results;
 using Business.Dtos.Workouts;
-using Business.Models.Mappers;       
-using Data.Contexts;                  
+using Business.Models.Mappers;
+using Data.Contexts;
 using Data.Entities;
 using Data.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -155,6 +155,9 @@ public class WorkoutService(DataContext ctx, IWorkoutRepository workoutRepositor
     // CREATE - från main branch
     public async Task<WorkoutResponse> CreateAsync(CreateWorkoutRequest req, CancellationToken ct = default)
     {
+        if (req.StartDate < DateTime.UtcNow)
+            throw new InvalidOperationException("Start date must be today or later.");
+
         var locationExists = await _ctx.WorkoutLocation.AnyAsync(l => l.Id == req.LocationId, ct);
         if (!locationExists)
             throw new KeyNotFoundException($"Location with id {req.LocationId} was not found.");
@@ -162,6 +165,12 @@ public class WorkoutService(DataContext ctx, IWorkoutRepository workoutRepositor
         var instructorExists = await _ctx.Instructor.AnyAsync(i => i.Id == req.InstructorId, ct);
         if (!instructorExists)
             throw new KeyNotFoundException($"Instructor with id {req.InstructorId} was not found.");
+
+        var clash = await _ctx.Workout.AnyAsync(w =>
+            w.StartDate == req.StartDate &&
+            w.LocationId == req.LocationId, ct);
+        if (clash)
+            throw new InvalidOperationException("This location is already booked at the selected time.");
 
         var entity = req.ToEntity();
 

@@ -12,49 +12,13 @@ namespace WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class WorkoutsController(IWorkoutService workoutService) : ControllerBase
+public class WorkoutsController : ControllerBase
 {
-    private readonly IWorkoutService _workoutService = workoutService;
+    private readonly IWorkoutService _workoutService;
+    public WorkoutsController(IWorkoutService workoutService) => _workoutService = workoutService;
 
-    // GET: api/workouts
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var result = await _workoutService.GetAllWorkoutsAsync();
-
-        if (result?.Data is null)
-            return NotFound();
-
-        return Ok(result.Data);
-    }
-
-    // GET: api/workouts/available
-    [HttpGet("available")]
-    public async Task<IActionResult> GetAvailable()
-    {
-        var result = await _workoutService.GetAvailableWorkoutsAsync();
-
-        if (result?.Data is null)
-            return NotFound();
-
-        return Ok(result.Data);
-    }
-
-    // GET: api/workouts/by-customer/{userId}
-    [HttpGet("by-customer/{userId}")]
-    public async Task<IActionResult> GetByCustomer(string userId)
-    {
-        var result = await _workoutService.GetWorkoutsByCustomerIdAsync(userId);
-
-        if (result?.Data is null)
-            return NotFound();
-
-        return Ok(result.Data);
-    }
-
-    // GET: api/workouts/{id}
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var result = await _workoutService.GetWorkoutByIdAsync(id);
 
@@ -65,9 +29,8 @@ public class WorkoutsController(IWorkoutService workoutService) : ControllerBase
         return Ok(data);
     }
 
-    // POST: api/workouts
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateWorkoutRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateWorkoutRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
